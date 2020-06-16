@@ -1,0 +1,224 @@
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(10, 9, 5, 4, 3, 2);
+
+const int ledPin = 13; // pin for LED that indicates water is on (digitalWrite)
+const int water = 12; // pin for LED that indicates water is on (digitalRead)
+const int buttonOn = 11; //pin for LED that indicates button is pressed (should be digitally READ)
+const int modebutton = A4; //pin for LED that indicates button is pressed (should be digitally READ)
+const int rightServo = 7; //pin for RIGHT_ServoLED  (digitalWrite)
+const int leftServo = 6; //pin for LEFT_ServoLED  (digitalWrite)
+const int ReadLServo = A2; //pin for LEFT_ServoLED  (digitalWrite)
+const int ReadRServo = A3; //pin for LEFT_ServoLED  (digitalWrite)
+//---------------------------------------------------------------------------------------------------------------------
+int ledState = LOW;             // ledState used to set the LED
+
+
+// Variables will change:
+const int threshold = 600; //fast mode
+const int threshold2 = 300; //slow mode
+
+//---------------------------------------------------------------------------------------------------------------------
+
+
+// Generally, you should use "unsigned long" for variables that hold time
+// The value will quickly become too large for an int to store
+unsigned long previousMillis = 0;        // will store last time LED was updated
+
+// constants won't change:
+const long interval = 500;           // interval at which to blink (milliseconds) NOT USED
+const long interval2 = 3000;           // interval at which to blink (milliseconds) NOT USED
+long OnTime = 1000;           // milliseconds of on-time
+long OffTime = 2000;          // milliseconds of off-time for normal mode
+long OffTime2 = 5000;          // milliseconds of off-time for fast
+long OffTime3 = 10000;          // milliseconds of off-time for Slow mode
+//---------------------------------------------------------------------------------------------------------------------
+
+//Tune how often serial.print is cycled
+int period = 1000;// 1000=1s
+int period2 = 500;// 1000=1s
+
+unsigned long time_now = 0;
+//---------------------------------------------------------------------------------------------------------------------
+
+
+// BUTTON
+int buttonPush = 0;   // counter for the number of button presses
+int OldState = 0;         // current state of the button
+int buttonState = 0;     // previous state of the button
+//---------------------------------------------------------------------------------------------------------------------
+
+int LEDState = 0;         // current state of the LED
+int lastLEDState = 0;     // previous state of the LED
+//
+//---------------------------------------------------------------------------------------------------------------------
+
+// these constants won't change. They are the lowest and highest readings you
+// get from your sensor:
+const int sensorMin = 0;      // sensor minimum, discovered through experiment
+const int sensorMax = 600;    // sensor maximum, discovered through experiment
+
+//---------------------------------------------------------------------------------------------------------------------
+
+
+// the setup routine runs once  you press reset:
+void setup() {
+  // initialize serial communication at 9600 bits per second:
+  Serial.begin(9600);
+  lcd.begin(16, 2);
+  // make the pushbutton's pin an input:
+  pinMode(buttonOn, INPUT);
+  pinMode(water, INPUT);
+  pinMode(ReadRServo, INPUT);
+  pinMode(ReadLServo, INPUT);
+  pinMode(modebutton, INPUT);
+  
+  pinMode(ledPin, OUTPUT);
+  pinMode(rightServo, OUTPUT);
+  pinMode(leftServo, OUTPUT);
+
+  digitalWrite(ledPin, LOW);
+  digitalWrite(rightServo, LOW);
+  digitalWrite(leftServo, LOW);
+  
+
+}
+//---------------------------------------------------------------------------------------------------------------------
+
+void loop() {
+    unsigned long currentMillis = millis();
+    int sensorReading = analogRead(A1);
+    
+//LCD DISPLAY PART
+if(millis() - time_now > period) //serial print on LCD every second
+{
+        time_now = millis(); //this function can also be used for serial monitor in a COM as well but not both
+
+  lcd.setCursor(0, 0);
+  lcd.print("brightness: ");
+  lcd.setCursor(11, 0);
+  lcd.print(sensorReading);
+//END LCD  
+}
+// TURN ON WHEN THE BUTTON IS PRESSED
+if (digitalRead(buttonOn) == HIGH) 
+{
+ if ((ledState == LOW) || (currentMillis - previousMillis >= OffTime2))
+  {
+    ledState = HIGH;  // turn it on
+    previousMillis = currentMillis;   // Remember the time
+    digitalWrite(ledPin, ledState);
+   tone(8, 90, 1000); //breadboard line 15
+
+  }
+  
+}
+//END
+
+  //MODE BUTTON
+     buttonPush = digitalRead(modebutton);
+  if (buttonPush==1) 
+  {
+    Serial.print("button pushed");
+    delay(10);
+     buttonPush = digitalRead(modebutton);
+    if (buttonPush == 0) 
+    {
+     buttonState = OldState+1;
+    }
+  }
+    else
+    {
+      delay(100);
+    }
+
+  
+//---------------------------------------------------------------------------------------------------------------------
+  
+ switch(buttonState) 
+ {
+case 1: //button pushed once
+  {// map the sensor range to a range of four options:
+  int range = map(sensorReading, sensorMin, sensorMax, 0, 3);
+
+  // do something different depending on the range value:
+  switch (range) 
+  {
+
+        
+    case 0:    // your hand is on the sensor
+      Serial.println("very wet");   
+ //if ground is very wet(with LDR's case very bright) then turn on Water every 20s
+      break;
+    case 1:    // your hand is close to the sensor
+      Serial.println("wet");
+ //if ground is wet then turn on Water every 10s
+      
+      break;
+    case 2:    // your hand is a few inches from the sensor
+      Serial.println("average");
+ //if ground is average then turn on LED every 5s
+      
+      break;
+    case 3:    // your hand is nowhere near the sensor
+      Serial.println("dry");
+ //if ground is average then turn on Water every 2s
+     
+      break;
+  }
+OldState=buttonState; //add 1+
+break; //break button
+ 
+  }
+ 
+case 2: //button pushed twice
+{
+digitalWrite(6,LOW);
+digitalWrite(7,LOW);
+  int range2 = map(sensorReading, 80, 700, 0, 3);
+
+
+  
+  // do something different depending on the range value:
+  switch (range2) 
+  {
+   case 0:    // your hand is on the sensor
+      Serial.println("very wet");   
+ //if ground is very wet(with LDR's case very bright) then turn on Water every 10s
+      break;
+    case 1:    // your hand is close to the sensor
+      Serial.println("wet");
+ //if ground is wet then turn on Water every 5s
+      
+      break;
+    case 2:    // your hand is a few inches from the sensor
+      Serial.println("average");
+ //if ground is average then turn on LED every 3s
+      
+      break;
+    case 3:    // your hand is nowhere near the sensor
+      Serial.println("dry");
+ //if ground is average then turn on Water every 1s
+     
+      break;
+  }
+OldState=buttonState; //add 1+
+break; //break button
+}
+ 
+default:
+Serial.println("RESETED");
+OldState=0; //reset button to 0
+break; //break button
+
+ } //switch BUTTON STATE END
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  }//VOID LOOP END
